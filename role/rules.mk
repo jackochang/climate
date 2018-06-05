@@ -26,6 +26,14 @@
 # sign helper
 _ = $$$$
 , = ,
+define /n
+
+
+endef
+
+define define
+$(1) = $(value 2)
+endef
 
 define extend
 $(eval $(1) = $(value 2))

@@ -52,6 +52,6 @@ endef
 CLEAN += .exe2_*
 
 .exe2_%:
-	$(foreach i,$(exe2_$*_params),$(AWS) $(exe2_$*_service) $(exe2_$*_command) $(exe2_$*_options) $(call $(exe2_$*_convert),$(i)))
+	$(foreach i,$(exe2_$*_params),$(AWS) $(exe2_$*_service) $(exe2_$*_command) $(exe2_$*_options) $(call $(exe2_$*_convert),$(i))$(/n))
 	@touch $@
 

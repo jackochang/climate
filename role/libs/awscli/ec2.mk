@@ -142,11 +142,12 @@ endef
 CLEAN += describe_*.json{,~}
 
 describe_route_table_%.json:
-	$(AWS) ec2 describe-route-tables --filters $(foreach i,$(describe_route_table_$*_filters), "$(call describe_rule,$(subst :, ,$(i)))") $(describe_route_table_$*_opts) > $@~
+	$(AWS) ec2 describe-route-tables --filters $(foreach i,$(describe_route_table_$*_filters), "$(call describe_rule,$(i))") $(describe_route_table_$*_opts) > $@~
 	@jq '.RouteTables[0]' $@~ > $@
 	@rm $@~
 
-$(eval $(call extend,describe_rule,Name=$$(1)$(,)Values=$$(2)))
+$(eval $(call define,describe_rule,$$(call describe_rule_fmt,$$(subst :, ,$$(1)))))
+$(eval $(call extend,describe_rule_fmt,Name=$$(1)$(,)Values=$$(2)))
 
 route_table_id = $(shell jq --raw-output '.RouteTableId' describe_route_table_$(1).json)
 
@@ -155,23 +156,20 @@ route_table_id = $(shell jq --raw-output '.RouteTableId' describe_route_table_$(
 # $(eval $(call tags,subnet_a,$$(call subnet_id,a),Name:$(SITENAME)-subnet-a))
 
 define tags
-$(call exec,tags_$(1),ec2,create-tags,--resource $(value 2) --tags $(foreach i,$(value 3),"$(call tags_rule,$(subst :, ,$(i)))"))
+$(call exec,tags_$(1),ec2,create-tags,--resource $(value 2) --tags $(foreach i,$(value 3),"$(call tags_rule,$(i))"))
 tags_$(1): .exec_tags_$(1)
 endef
 
-$(eval $(call extend,tags_rule,Key=$$(1)$(,)Value=$$(2)))
+$(eval $(call define,tags_rule,$$(call tags_rule_fmt,$$(subst :, ,$$(1)))))
+$(eval $(call extend,tags_rule_fmt,Key=$$(1)$(,)Value=$$(2)))
 
 ## sgai
 # $(call sgai,security_group_$(1),$$(call security_group_id,vpc_to_all),all:0-65535:10.0.0.0/16)
 
 define sgai
-$(call exe2,sgai_$(1),ec2,authorize-security-group-ingress,--group-id $(2),sgai_convert,$(3))
+$(call exe2,sgai_$(1),ec2,authorize-security-group-ingress,--group-id $(2),sgai_rule,$(3))
 sgai_$(1): .exe2_sgai_$(1)
 endef
 
-define sgai_convert
-$(call sgai_rule,$(subst :, ,$(1)))
-
-endef
-
-$(eval $(call extend,sgai_rule,--protocol $$(1) --port $$(2) $_(if $_(filter sg-%,$$(3)),--source-group,--cidr) $$(3)))
+$(eval $(call define,sgai_rule,$$(call sgai_rule_fmt,$$(subst :, ,$$(1)))$(/n)))
+$(eval $(call extend,sgai_rule_fmt,--protocol $$(1) --port $$(2) $_(if $_(filter sg-%,$$(3)),--source-group,--cidr) $$(3)))
